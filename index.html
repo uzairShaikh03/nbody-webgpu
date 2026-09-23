@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPU N-Body — real-time gravity simulation in WebGPU</title>
+    <meta
+      name="description"
+      content="Real-time N-body gravitational simulation running on the GPU with tiled WGSL compute shaders, benchmarked against CPU naive and Barnes-Hut implementations."
+    />
+  </head>
+  <body>
+    <canvas id="gpu-canvas"></canvas>
+
+    <div id="unsupported" class="overlay" hidden>
+      <div class="overlay-card">
+        <h1>WebGPU not available</h1>
+        <p>
+          This simulation runs on <strong>WebGPU compute shaders</strong>. Your browser or device
+          did not expose a GPU adapter.
+        </p>
+        <p class="muted">
+          Works in Chrome / Edge / Safari 26+ / Firefox on desktop. See the recorded demo in the
+          README if you cannot run it here.
+        </p>
+        <pre id="unsupported-reason" class="reason"></pre>
+      </div>
+    </div>
+
+    <header id="titlebar">
+      <h1>GPU N&#8209;Body</h1>
+      <p>
+        <span id="body-count-label">—</span> bodies · gravitational <em>n</em>-body integration ·
+        <span id="backend-label">—</span>
+      </p>
+    </header>
+
+    <section id="stats" class="panel">
+      <div class="stat">
+        <span class="stat-label">fps</span><span class="stat-value" id="stat-fps">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">physics step</span
+        ><span class="stat-value" id="stat-step">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">interactions/s</span
+        ><span class="stat-value" id="stat-rate">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">bodies</span><span class="stat-value" id="stat-bodies">—</span>
+      </div>
+      <div class="stat-note" id="stat-note"></div>
+    </section>
+
+    <section id="controls" class="panel">
+      <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="true">
+        controls
+      </button>
+
+      <div class="panel-body">
+        <label class="field">
+          <span class="field-label">solver</span>
+          <select id="ctrl-mode">
+            <option value="gpu-tiled">GPU · tiled compute (O(n²))</option>
+            <option value="cpu-barnes-hut">CPU · Barnes-Hut (O(n log n))</option>
+            <option value="cpu-naive">CPU · naive (O(n²))</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">scenario</span>
+          <select id="ctrl-preset">
+            <option value="galaxy">spiral disk galaxy</option>
+            <option value="collision">two-galaxy collision</option>
+            <option value="sphere">cold collapse sphere</option>
+            <option value="solar">solar system (to scale-ish)</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">bodies <output id="out-count"></output></span>
+          <input id="ctrl-count" type="range" min="8" max="18" step="1" value="15" />
+        </label>
+
+        <label class="field">
+          <span class="field-label">gravity G <output id="out-g"></output></span>
+          <input id="ctrl-g" type="range" min="0" max="4" step="0.01" value="1" />
+        </label>
+
+        <label class="field">
+          <span class="field-label">timestep <output id="out-dt"></output></span>
+          <input id="ctrl-dt" type="range" min="0.0005" max="0.02" step="0.0005" value="0.005" />
+        </label>
+
+        <label class="field">
+          <span class="field-label">softening <output id="out-soft"></output></span>
+          <input id="ctrl-soft" type="range" min="0.05" max="1.5" step="0.01" value="0.35" />
+        </label>
+
+        <label class="field">
+          <span class="field-label">Barnes-Hut θ <output id="out-theta"></output></span>
+          <input id="ctrl-theta" type="range" min="0.2" max="1.5" step="0.05" value="0.75" />
+        </label>
+
+        <label class="field">
+          <span class="field-label">trail persistence <output id="out-trail"></output></span>
+          <input id="ctrl-trail" type="range" min="0" max="0.97" step="0.01" value="0.82" />
+        </label>
+
+        <div class="field row">
+          <button id="ctrl-pause" type="button">pause</button>
+          <button id="ctrl-reset" type="button">reset</button>
+          <button id="ctrl-bench" type="button">benchmark</button>
+        </div>
+
+        <p class="hint">
+          drag to orbit · scroll to zoom · click to drop a massive attractor
+        </p>
+      </div>
+    </section>
+
+    <div id="bench" class="panel" hidden>
+      <div class="bench-head">
+        <span>solver benchmark</span><button id="bench-close" type="button">×</button>
+      </div>
+      <table id="bench-table">
+        <thead>
+          <tr>
+            <th>solver</th>
+            <th>bodies</th>
+            <th>ms / step</th>
+            <th>speedup</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="bench-note" id="bench-note"></p>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
