@@ -292,21 +292,29 @@ async function main(): Promise<void> {
     const baseline = rows[0].ms;
     const best = Math.min(...rows.map((r) => r.ms));
     tbody.innerHTML = rows
-      .map(
-        (row) => `<tr class="${row.ms === best ? 'winner' : ''}">
+      .map((row) => {
+        // A speedup is only meaningful against a baseline solving the same
+        // problem size, so rows at a different body count show throughput.
+        const comparable = row.count === fairCount;
+        const last = comparable
+          ? `${(baseline / row.ms).toFixed(1)}×`
+          : `${formatRate((row.count * row.count) / (row.ms / 1000))}/s`;
+        return `<tr class="${row.ms === best ? 'winner' : ''}">
           <td>${row.label}</td>
           <td>${formatInt(row.count)}</td>
           <td>${row.ms < 1 ? row.ms.toFixed(3) : row.ms.toFixed(2)}</td>
-          <td>${(baseline / row.ms).toFixed(1)}×</td>
-        </tr>`,
-      )
+          <td>${last}</td>
+        </tr>`;
+      })
       .join('');
 
     const gpuFair = rows.find((r) => r.label === 'GPU tiled' && r.count === fairCount);
     note.textContent = gpuFair
       ? `Speedup is relative to direct summation on the CPU at ${formatInt(fairCount)} bodies. ` +
         `The GPU still evaluates all ${formatInt(fairCount)}² pairs — it is ${(baseline / gpuFair.ms).toFixed(0)}× ` +
-        `faster on identical work, whereas Barnes-Hut wins by doing asymptotically less work.`
+        `faster on identical work, whereas Barnes-Hut wins by doing asymptotically less work. ` +
+        `Larger runs report pair-forces per second instead, since a speedup against a different ` +
+        `problem size would be meaningless.`
       : '';
 
     reseed();

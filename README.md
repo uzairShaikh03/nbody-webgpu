@@ -1,8 +1,9 @@
 # GPU N-Body
 
 Real-time gravitational N-body simulation running entirely on the GPU through raw WebGPU compute
-shaders. **32,768 bodies at 60 fps — about 84 billion pair-force evaluations per second — in a
-browser tab**, with no engine, no framework, and no third-party rendering library.
+shaders. **32,768 bodies at 60 fps — over 82 billion pair-force evaluations per second — in a
+browser tab**, with no engine, no framework, and no third-party rendering library. That is 47.7×
+faster than the same algorithm on the CPU.
 
 Zero runtime dependencies; the whole thing ships in **13.7 kB gzipped**.
 
@@ -33,19 +34,24 @@ free-falls and violently relaxes, and a solar system with asteroid and Kuiper be
 Measured on an **Apple M4 (8-core GPU), Chrome**, via the in-app `benchmark` button. All three
 solvers run identical initial conditions at 4,096 bodies so the comparison is apples to apples.
 
-| Solver | Bodies | ms / step | Speedup |
-| --- | ---: | ---: | ---: |
-| CPU naive | 4,096 | 46.30 | 1.0× |
-| CPU Barnes-Hut (θ=0.75) | 4,096 | 10.32 | 4.5× |
-| **GPU tiled** | 4,096 | **5.88** | **7.9×** |
-| **GPU tiled** | 32,768 | **12.8** | — |
+| Solver | Bodies | ms / step | Speedup | Pair-forces / s |
+| --- | ---: | ---: | ---: | ---: |
+| CPU naive | 4,096 | 24.07 | 1.0× | 0.70 G |
+| CPU Barnes-Hut (θ=0.75) | 4,096 | 6.93 | 3.5× | 2.42 G |
+| **GPU tiled** | 4,096 | **0.505** | **47.7×** | **33.2 G** |
+| **GPU tiled** | 32,768 | **13.06** | — | **82.2 G** |
 
 The two speedups come from completely different places, which is the interesting part:
 
 - **Barnes-Hut wins by doing less work.** At 32,768 bodies it evaluates ~1.3% of the pairs a direct
   solver would, by collapsing distant clusters into a single centre of mass.
 - **The GPU wins by doing the same work faster.** It still evaluates every one of the 1.07 billion
-  pairs per step at 32,768 bodies — it just does them ~8× faster than the CPU per unit of work.
+  pairs per step at 32,768 bodies — it is 47.7× faster than the CPU on byte-for-byte identical work.
+
+Note that the GPU is *more* efficient at the larger problem size: 33.2 G pair-forces/s at 4,096
+bodies versus 82.2 G at 32,768. At 4,096 bodies there is not enough parallel work to saturate all
+8 GPU cores, so per-dispatch overhead dominates. Scaling up is nearly free until the device is
+actually busy.
 
 ## How it works
 
