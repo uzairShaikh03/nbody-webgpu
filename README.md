@@ -7,7 +7,7 @@ faster than the same algorithm on the CPU.
 
 Zero runtime dependencies; the whole thing ships in **13.7 kB gzipped**.
 
-**[▶ Live demo](#)** &nbsp;·&nbsp; no install, no clone, just open it
+**[▶ Live demo](https://nbody-webgpu.vercel.app/)** &nbsp;·&nbsp; no install, no clone, just open it
 
 <!-- TODO: demo.gif -->
 
